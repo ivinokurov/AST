@@ -777,7 +777,7 @@ class TransformerDecoder(nn.Module):
 
 
 # =============================================================================
-# Cross-Attention Module with Geometric Prior
+# Модуль перекрёстного внимания с геометрическим априорным ограничением
 # =============================================================================
 
 def sinusoidal_positional_encoding_1d(x: Tensor, num_freqs: int = 4) -> Tensor:
@@ -1028,7 +1028,7 @@ class SunPositionHead(nn.Module):
 
 
 # =============================================================================
-# Complete AST Model
+# Модель AST
 # =============================================================================
 
 class ASTModel(nn.Module):
@@ -1040,7 +1040,7 @@ class ASTModel(nn.Module):
         # Backbone
         self.backbone = ASTBackbone(img_size=img_size)
         
-        # Feature alignment (1x1 conv with GroupNorm)
+        # Выравнивание признаков (свёртка 1×1 с GroupNorm)
         self.feature_alignment = nn.ModuleList([
             nn.Sequential(
                 nn.Conv2d(channels, d_model, kernel_size=1),
@@ -1048,13 +1048,13 @@ class ASTModel(nn.Module):
             ) for channels in [96, 192, 384, 768]
         ])
         
-        # Decoder
+        # Декодер
         self.decoder = TransformerDecoder(
             d_model=d_model, nhead=8, num_decoder_layers=6,
             num_queries=num_queries
         )
         
-        # Cross-attention module
+        # Модуль перекрестного внмания
         self.cross_attention = GeometricCrossAttention(d_model=d_model)
         
         # Prediction heads
@@ -1063,9 +1063,9 @@ class ASTModel(nn.Module):
         self.type_head = TypeClassificationHead(d_model, num_fence_types)
         self.sun_head = SunPositionHead(d_model)
         
-        # Match queries to fence-shadow pairs
+        # Сопоставление запросов с парами ограждение-тень
         self.num_queries = num_queries
-        self.num_pairs = num_queries // 2  # Half for fence, half for shadow
+        self.num_pairs = num_queries // 2  # Половина — для ограждения, половина — для тени
 
     def forward(self, images: Tensor, sun_azimuth: Optional[Tensor] = None,
                 sun_elevation: Optional[Tensor] = None,
@@ -1284,14 +1284,14 @@ def create_scheduler(optimizer: torch.optim.Optimizer, num_epochs: int,
 
 
 if __name__ == "__main__":
-    # Quick test
+    # Быстрый тест
     print("Testing AST Model...")
     
-    # Create model
+    # Создание модели
     model = ASTModel(img_size=512, num_queries=300)
     model.eval()
     
-    # Create dummy input
+    # Создание dummy input
     images = torch.randn(2, 3, 512, 512)
     sun_azimuth = torch.tensor([0.5, 1.0])
     sun_elevation = torch.tensor([0.3, 0.6])

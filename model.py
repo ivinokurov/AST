@@ -21,7 +21,7 @@ from torch import Tensor
 # =============================================================================
 
 def drop_path(x: Tensor, drop_prob: float = 0.0, training: bool = False) -> Tensor:
-    """Отключение путей (Stochastic Depth) per sample."""
+    """Отключение путей (Stochastic Depth) для каждого сэмпла."""
     if drop_prob == 0.0 or not training:
         return x
     keep_prob = 1 - drop_prob
@@ -33,7 +33,7 @@ def drop_path(x: Tensor, drop_prob: float = 0.0, training: bool = False) -> Tens
 
 
 class DropPath(nn.Module):
-    """Отключение путей (Stochastic Depth) per sample."""
+    """Отключение путей (Stochastic Depth) для каждого сэмпла."""
     def __init__(self, drop_prob: float = 0.0):
         super().__init__()
         self.drop_prob = drop_prob
@@ -65,11 +65,11 @@ class Mlp(nn.Module):
 
 
 # =============================================================================
-# Оконное внимание (Stage 1)
+# Оконное внимание (Этап 1)
 # =============================================================================
 
 class WindowAttention(nn.Module):
-    """Оконное многоголовое самовнимание for Swin Transformer."""
+    """Оконное многоголовое самовнимание для Swin Transformer."""
     def __init__(self, dim: int, num_heads: int, window_size: int = 7,
                  qkv_bias: bool = True, attn_drop: float = 0.0, proj_drop: float = 0.0):
         super().__init__()
@@ -79,7 +79,7 @@ class WindowAttention(nn.Module):
         self.head_dim = dim // num_heads
         self.scale = self.head_dim ** -0.5
 
-        # Таблица относительных позиций
+        # Таблица относительных позиционных смещений
         self.relative_position_bias_table = nn.Parameter(
             torch.zeros((2 * window_size - 1) * (2 * window_size - 1), num_heads))
         coords_h = torch.arange(window_size)
@@ -131,11 +131,11 @@ class WindowAttention(nn.Module):
 
 
 # =============================================================================
-# Деформируемое внимание (Stages 2-4)
+# Деформируемое внимание (Этапы 2-4)
 # =============================================================================
 
 class SeparateOffsetFields(nn.Module):
-    """Раздельные поля смещения для ограждений и теней as per AST specification.
+    """Раздельные поля смещения для ограждений и теней согласно спецификации AST.
     
     Для ограждений: s_fence = 0.05 (плавные деформации)
     Для теней: s_shadow = 0.35 (резкие изломы на перепадах рельефа)
@@ -151,8 +151,8 @@ class SeparateOffsetFields(nn.Module):
         self.num_points = num_points
         
         # Раздельные линейные проекторы для ограждений и теней
-        offset_dim = 2 * num_levels * num_points  # 2D смещения на каждый уровень/точку
-        weight_dim = num_levels * num_points  # Веса внимания на каждый уровень/точку
+        offset_dim = 2 * num_levels * num_points  # 2D смещения для каждого уровня/точки
+        weight_dim = num_levels * num_points  # Веса внимания для каждого уровня/точки
         
         # Поле смещений для ограждений
         self.fence_offset_proj = nn.Linear(dim, offset_dim)
@@ -174,12 +174,12 @@ class SeparateOffsetFields(nn.Module):
     def forward(self, query: Tensor) -> Dict[str, Dict[str, Tensor]]:
         """
         Аргументы:
-            query: Query tensor of shape (B, N, C) or (N, B, C)
+            query: Тензор запроса формы (B, N, C) или (N, B, C)
         
         Возвращает:
-            offsets: Dict with 'fence' and 'shadow' keys, each containing:
-                - 'offset': Scaled offsets (..., 2*L*K)
-                - 'weight': Attention weights (..., L*K)
+            offsets: Словарь с ключами 'fence' и 'shadow', каждый содержит:
+                - 'offset': Масштабированные смещения (..., 2*L*K)
+                - 'weight': Веса внимания (..., L*K)
         """
         # Обработка форматов (B, N, C) и (N, B, C)
         if query.dim() == 3:
@@ -250,14 +250,14 @@ class DeformableAttention(nn.Module):
                 object_class: str = 'fence') -> Tensor:
         """
         Аргументы:
-            query: Tensor of shape (B, N_q, C) - query tokens
-            reference_points: Tensor of shape (B, N_q, 2) - normalized reference points [0, 1]
-            value_list: List of feature maps at different scales [(B, C, H_l, W_l), ...]
-            spatial_shapes: List of (H, W) for each level
-            object_class: 'fence' or 'shadow' - determines which offset field to use
+            query: Тензор формы (B, N_q, C) - токены запросов
+            reference_points: Тензор формы (B, N_q, 2) - нормализованные опорные точки [0, 1]
+            value_list: Список карт признаков на разных масштабах [(B, C, H_l, W_l), ...]
+            spatial_shapes: Список (H, W) для каждого уровня
+            object_class: 'fence' или 'shadow' - определяет используемое поле смещений
         
         Возвращает:
-            output: Tensor of shape (B, N_q, C)
+            output: Тензор формы (B, N_q, C)
         """
         B, N_q, C = query.shape
         
@@ -345,7 +345,7 @@ class DeformableAttention(nn.Module):
 # =============================================================================
 
 class SwinTransformerBlock(nn.Module):
-    """Swin Transformer block with архитектурой pre-norm."""
+    """Блок Swin Transformer с архитектурой pre-norm."""
     def __init__(self, dim: int, num_heads: int, window_size: int = 7,
                  shift_size: int = 0, mlp_ratio: float = 4.0,
                  drop: float = 0.0, drop_path: float = 0.0,
@@ -381,7 +381,7 @@ class SwinTransformerBlock(nn.Module):
         
         if isinstance(self.attn, DeformableAttention):
             # Деформируемое внимание - без ограничений на размер окон
-            assert L == H * W, f"Feature map size mismatch: {L} vs {H}*{W}"
+            assert L == H * W, f"Несоответствие размера карты признаков: {L} vs {H}*{W}"
             shortcut = x
             x = self.norm1(x)
             x = x.view(B, H, W, C)
@@ -466,11 +466,11 @@ class SwinTransformerBlock(nn.Module):
 
 
 # =============================================================================
-# Patch Embedding and Patch Merging
+# Внедрение патчей и слияние патчей
 # =============================================================================
 
 class PatchEmbed(nn.Module):
-    """Patch embedding layer: 4x4 conv with LayerNorm."""
+    """Слой внедрения патчей: свёртка 4x4 с LayerNorm."""
     def __init__(self, img_size: int = 224, patch_size: int = 4, in_chans: int = 3,
                  embed_dim: int = 96):
         super().__init__()
@@ -491,7 +491,7 @@ class PatchEmbed(nn.Module):
 
 
 class PatchMerging(nn.Module):
-    """Patch merging: combines 2x2 neighboring patches, doubles channels."""
+    """Слияние патчей: объединяет 2x2 соседних патча, удваивает каналы."""
     def __init__(self, dim: int):
         super().__init__()
         self.dim = dim
@@ -501,11 +501,11 @@ class PatchMerging(nn.Module):
     def forward(self, x: Tensor, hw_shape: Tuple[int, int]) -> Tuple[Tensor, Tuple[int, int]]:
         H, W = hw_shape
         B, L, C = x.shape
-        assert L == H * W, "Input feature size doesn't match hw_shape"
+        assert L == H * W, "Размер входного признака не соответствует hw_shape"
         
         x = x.view(B, H, W, C)
         
-        # Pad if odd dimensions
+        # Паддинг для нечётных размеров
         if H % 2 == 1:
             x = F.pad(x, (0, 0, 0, 0, 0, 1))
             H += 1
@@ -528,11 +528,11 @@ class PatchMerging(nn.Module):
 
 
 # =============================================================================
-# AST Backbone
+# Backbone AST
 # =============================================================================
 
 class ASTBackbone(nn.Module):
-    """AST Backbone: Swin Transformer с деформируемым вниманием на этапах 2-4.
+    """Backbone AST: Swin Transformer с деформируемым вниманием на этапах 2-4.
     
     Формирует многоуровневые карты признаков и раздельные поля смещений для ограждений и теней.
     """
@@ -546,7 +546,7 @@ class ASTBackbone(nn.Module):
         self.embed_dim = embed_dim
         self.depths = depths
         
-        # Внедрение патчей (patch embedding)
+        # Внедрение патчей
         self.patch_embed = PatchEmbed(img_size=img_size, patch_size=4, in_chans=3,
                                        embed_dim=embed_dim)
         
@@ -608,7 +608,7 @@ class ASTBackbone(nn.Module):
             else:
                 self.offset_predictors.append(None)
             
-            num_channels *= 2  # Удвоение каналов после patch merging
+            num_channels *= 2  # Удвоение каналов после слияния патчей
         
         self.num_features = num_channels // 2  # Каналы на последнем этапе
     
@@ -673,7 +673,7 @@ class ASTBackbone(nn.Module):
 # =============================================================================
 
 class TransformerDecoderLayer(nn.Module):
-    """Single transformer decoder layer with self-attention, cross-attention, and FFN."""
+    """Один слой трансформерного декодера с самовниманием, перекрёстным вниманием и FFN."""
     def __init__(self, d_model: int = 256, nhead: int = 8, dim_feedforward: int = 1024,
                  dropout: float = 0.1, num_levels: int = 4, num_points: int = 4):
         super().__init__()
@@ -700,12 +700,12 @@ class TransformerDecoderLayer(nn.Module):
     def forward(self, tgt: Tensor, memory: List[Tensor], 
                 reference_points: Tensor, spatial_shapes: List[Tuple[int, int]],
                 tgt_mask: Optional[Tensor] = None) -> Tensor:
-        # Self-attention
+        # Самовнимание
         tgt2 = self.self_attn(tgt, tgt, tgt, attn_mask=tgt_mask)[0]
         tgt = tgt + self.dropout1(tgt2)
         tgt = self.norm1(tgt)
         
-        # Cross-attention (deformable)
+        # Перекрёстное внимание (деформируемое)
         tgt2 = self.cross_attn(tgt.transpose(0, 1), reference_points, memory, spatial_shapes)
         tgt = tgt + self.dropout2(tgt2.transpose(0, 1))
         tgt = self.norm2(tgt)
@@ -719,7 +719,7 @@ class TransformerDecoderLayer(nn.Module):
 
 
 class TransformerDecoder(nn.Module):
-    """Трансформерный декодер с 6 слоями and 300 object queries."""
+    """Трансформерный декодер с 6 слоями и 300 объектными запросами."""
     def __init__(self, d_model: int = 256, nhead: int = 8, num_decoder_layers: int = 6,
                  dim_feedforward: int = 1024, dropout: float = 0.1, num_queries: int = 300,
                  num_levels: int = 4, num_points: int = 4):
@@ -782,26 +782,26 @@ class TransformerDecoder(nn.Module):
 
 def sinusoidal_positional_encoding_1d(x: Tensor, num_freqs: int = 4) -> Tensor:
     """
-    Sinusoidal positional encoding for scalar values (azimuth/elevation).
+    Синусоидальное позиционное кодирование для скалярных значений (азимут/высота).
     
-    PE(x) = [sin(2^k x), cos(2^k x)] for k = 0..K-1
+    PE(x) = [sin(2^k x), cos(2^k x)] для k = 0..K-1
     
     Аргументы:
-        x: Input tensor of shape (B,) or (B, 1)
-        num_freqs: Number of frequency bands (K=4 as per spec)
+        x: Входной тензор формы (B,) или (B, 1)
+        num_freqs: Количество частотных полос (K=4 согласно спецификации)
     
     Возвращает:
-        encoding: Tensor of shape (B, 2*K)
+        encoding: Тензор формы (B, 2*K)
     """
     # Убедиться, что x имеет хотя бы 1D
     if x.dim() == 0:
-        x = x.unsqueeze(0)  # Scalar to (1,)
+        x = x.unsqueeze(0)  # Скаляр в (1,)
     
     freq_bands = torch.pow(2, torch.arange(num_freqs, device=x.device)).to(x.dtype)
     # x: (B,) -> (B, 1); freq_bands: (K,) -> (1, K)
     # scaled_x: (B, K)
     scaled_x = x.unsqueeze(-1) * freq_bands.unsqueeze(0)
-    # Stack sin and cos: (B, K, 2) -> (B, 2*K)
+    # Стек sin и cos: (B, K, 2) -> (B, 2*K)
     encoding = torch.stack([torch.sin(scaled_x), torch.cos(scaled_x)], dim=-1)
     encoding = encoding.view(x.shape[0], -1)
     return encoding
@@ -810,14 +810,14 @@ def sinusoidal_positional_encoding_1d(x: Tensor, num_freqs: int = 4) -> Tensor:
 class GeometricCrossAttention(nn.Module):
     """Модуль перекрёстного внимания с геометрическим приором по положению солнца и типу ограждения.
     
-    Implements equation from specification:
+    Реализует уравнение согласно спецификации:
     α_ij^cross = Softmax_j( (q_i^fence · k_j^shadow)/√d + PE(p_j^shadow - p_i^fence)
                            + PE_az(φ_sun) + PE_el(α_sun) + PE_τ(τ_fence) )
     
-    Where:
-    - PE_az(φ) = [sin(2^k φ), cos(2^k φ)] for k=0..3 (K=4)
-    - PE_el(α) = [sin(2^k α), cos(2^k α)] for k=0..3 (K=4)
-    - PE_τ(τ) = learned embedding for fence type
+    Где:
+    - PE_az(φ) = [sin(2^k φ), cos(2^k φ)] для k=0..3 (K=4)
+    - PE_el(α) = [sin(2^k α), cos(2^k α)] для k=0..3 (K=4)
+    - PE_τ(τ) = обучаемое встраивание для типа ограждения
     """
     def __init__(self, d_model: int = 256, nhead: int = 8, dropout: float = 0.1,
                  num_freqs: int = 4, num_fence_types: int = 4):
@@ -872,16 +872,16 @@ class GeometricCrossAttention(nn.Module):
                 shadow_positions: Optional[Tensor] = None) -> Tensor:
         """
         Аргументы:
-            fence_queries: Fence query tensors (N, B, C)
-            shadow_queries: Shadow query tensors (N, B, C)
-            sun_azimuth: Sun azimuth angle φ_sun in radians (B,)
-            sun_elevation: Sun elevation angle α_sun in radians (B,)
-            fence_types: Fence type indices τ (B,) or None
-            fence_positions: Fence center positions (N, B, 2) optional
-            shadow_positions: Shadow center positions (N, B, 2) optional
+            fence_queries: Тензоры запросов ограждений (N, B, C)
+            shadow_queries: Тензоры запросов теней (N, B, C)
+            sun_azimuth: Азимут солнца φ_sun в радианах (B,)
+            sun_elevation: Высота солнца α_sun в радианах (B,)
+            fence_types: Индексы типов ограждений τ (B,) или None
+            fence_positions: Позиции центров ограждений (N, B, 2) - опционально
+            shadow_positions: Позиции центров теней (N, B, 2) - опционально
 
         Возвращает:
-            enhanced_queries: Enhanced fence queries (N, B, C)
+            enhanced_queries: Улучшенные запросы ограждений (N, B, C)
         """
         N, B, C = fence_queries.shape
         
@@ -917,7 +917,7 @@ class GeometricCrossAttention(nn.Module):
         K = self.key_proj(shadow_queries + sun_encoding + rel_pos_enc)
         V = self.value_proj(shadow_queries + sun_encoding + rel_pos_enc)
 
-        # Multi-head attention
+        # Многоголовое внимание
         Q = Q.view(N, B, self.nhead, C // self.nhead).permute(1, 2, 0, 3)
         K = K.view(N, B, self.nhead, C // self.nhead).permute(1, 2, 0, 3)
         V = V.view(N, B, self.nhead, C // self.nhead).permute(1, 2, 0, 3)
@@ -936,7 +936,7 @@ class GeometricCrossAttention(nn.Module):
 # =============================================================================
 
 class ClassificationHead(nn.Module):
-    """Головка классификации с фокальной потерей initialization."""
+    """Головка классификации с инициализацией для фокальной потери."""
     def __init__(self, d_model: int = 256, num_classes: int = 1, hidden_dim: int = 256,
                  focal_prior: float = 0.01):
         super().__init__()
@@ -959,9 +959,9 @@ class ClassificationHead(nn.Module):
 
 
 class OBBRegressionHead(nn.Module):
-    """Oriented Bounding Box regression head.
+    """Головка регрессии ориентированных ограничивающих рамок.
     
-    Predicts (x, y, w, h, theta) where theta is parameterized as (sin(theta), cos(theta)).
+    Предсказывает (x, y, w, h, theta) где theta параметризована как (sin(theta), cos(theta)).
     """
     def __init__(self, d_model: int = 256, hidden_dim: int = 256):
         super().__init__()
@@ -977,18 +977,18 @@ class OBBRegressionHead(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         """
         Возвращает:
-            bbox_params: (..., 6) tensor with [x, y, w, h, sin_theta, cos_theta]
+            bbox_params: Тензор (..., 6) с [x, y, w, h, sin_theta, cos_theta]
         """
         return self.mlp(x)
     
     @staticmethod
     def decode_angle(sin_theta: Tensor, cos_theta: Tensor) -> Tensor:
-        """Recover angle from sin/cos parameterization using atan2."""
+        """Восстанавливает угол из параметризации sin/cos с помощью atan2."""
         return torch.atan2(sin_theta, cos_theta)
 
 
 class TypeClassificationHead(nn.Module):
-    """Головка классификации типа ограждения (4 classes)."""
+    """Головка классификации типа ограждения (4 класса)."""
     def __init__(self, d_model: int = 256, num_types: int = 4):
         super().__init__()
         self.classifier = nn.Linear(d_model, num_types)
@@ -998,9 +998,9 @@ class TypeClassificationHead(nn.Module):
 
 
 class SunPositionHead(nn.Module):
-    """Sun position estimation head (auxiliary self-supervised task).
+    """Головка оценки положения солнца (вспомогательная самообучаемая задача).
     
-    Predicts azimuth (via sin/cos) and elevation (via sigmoid * pi/2).
+    Предсказывает азимут (через sin/cos) и высоту (через sigmoid * pi/2).
     """
     def __init__(self, d_model: int = 256, hidden_dim: int = 256):
         super().__init__()
@@ -1016,8 +1016,8 @@ class SunPositionHead(nn.Module):
     def forward(self, x: Tensor) -> Tuple[Tensor, Tensor]:
         """
         Возвращает:
-            azimuth: (..., 2) tensor with [sin_az, cos_az]
-            elevation: (...) tensor with elevation in (0, pi/2]
+            azimuth: Тензор (..., 2) с [sin_az, cos_az]
+            elevation: Тензор (...) с высотой в (0, pi/2]
         """
         pred = self.mlp(x)
         sin_az = pred[..., 0]
@@ -1054,10 +1054,10 @@ class ASTModel(nn.Module):
             num_queries=num_queries
         )
         
-        # Модуль перекрестного внмания
+        # Модуль перекрёстного внимания
         self.cross_attention = GeometricCrossAttention(d_model=d_model)
         
-        # Prediction heads
+        # Головки предсказания
         self.classification_head = ClassificationHead(d_model, num_classes)
         self.obb_head = OBBRegressionHead(d_model)
         self.type_head = TypeClassificationHead(d_model, num_fence_types)
@@ -1072,24 +1072,24 @@ class ASTModel(nn.Module):
                 fence_types: Optional[Tensor] = None) -> Dict[str, Tensor]:
         """
         Аргументы:
-            images: Input images (B, 3, H, W)
-            sun_azimuth: Sun azimuth angle (B,) - optional for inference
-            sun_elevation: Sun elevation angle (B,) - optional for inference
-            fence_types: Fence type indices (N, B) - optional for inference
+            images: Входные изображения (B, 3, H, W)
+            sun_azimuth: Угол азимута солнца (B,) - опционально для инференса
+            sun_elevation: Угол высоты солнца (B,) - опционально для инференса
+            fence_types: Индексы типов ограждений (N, B) - опционально для инференса
         
         Возвращает:
-            predictions: Dict with:
-                - cls_logits: Classification logits (N_q, B, num_classes)
-                - obb_params: OBB parameters (N_q, B, 6)
-                - type_logits: Fence type logits (N_q, B, num_types)
-                - sun_pred: Predicted sun position (optional)
+            predictions: Словарь с:
+                - cls_logits: Логиты классификации (N_q, B, num_classes)
+                - obb_params: Параметры OBB (N_q, B, 6)
+                - type_logits: Логиты типов ограждений (N_q, B, num_types)
+                - sun_pred: Предсказанное положение солнца (опционально)
         """
         B = images.shape[0]
         
-        # Extract features
+        # Извлечение признаков
         features, offsets = self.backbone(images)
         
-        # Align features to common dimension
+        # Выравнивание признаков до общей размерности
         aligned_features = []
         spatial_shapes = []
         for i, feat in enumerate(features):
@@ -1097,16 +1097,16 @@ class ASTModel(nn.Module):
             aligned_features.append(feat_aligned.flatten(2).permute(2, 0, 1))
             spatial_shapes.append((feat_aligned.shape[2], feat_aligned.shape[3]))
         
-        # Decode
+        # Декодирование
         decoder_output = self.decoder(aligned_features, spatial_shapes)
         
-        # Split into fence and shadow queries
+        # Разделение на запросы ограждений и теней
         fence_queries = decoder_output[:self.num_pairs]
         shadow_queries = decoder_output[self.num_pairs:]
         
-        # Apply cross-attention with geometric prior
+        # Применение перекрёстного внимания с геометрическим приором
         if sun_azimuth is None:
-            # Use dummy values for inference
+            # Использование фиктивных значений для инференса
             sun_azimuth = torch.zeros(B, device=images.device)
             sun_elevation = torch.zeros(B, device=images.device)
         
@@ -1115,12 +1115,12 @@ class ASTModel(nn.Module):
             sun_azimuth, sun_elevation, fence_types
         )
         
-        # Generate predictions
+        # Генерация предсказаний
         cls_logits = self.classification_head(enhanced_queries)
         obb_params = self.obb_head(enhanced_queries)
         type_logits = self.type_head(enhanced_queries)
         
-        # Sun position prediction (auxiliary)
+        # Предсказание положения солнца (вспомогательное)
         sun_pred_sin_cos, sun_pred_elevation = self.sun_head(decoder_output.mean(dim=0))
         
         return {
@@ -1133,11 +1133,11 @@ class ASTModel(nn.Module):
 
 
 # =============================================================================
-# Функция потерьs
+# Функции потерь
 # =============================================================================
 
 class FocalLoss(nn.Module):
-    """Focal loss for classification."""
+    """Фокальная потеря для классификации."""
     def __init__(self, alpha: float = 0.25, gamma: float = 2.0):
         super().__init__()
         self.alpha = alpha
@@ -1151,23 +1151,23 @@ class FocalLoss(nn.Module):
 
 
 class OBBLoss(nn.Module):
-    """Loss for oriented bounding box regression."""
+    """Функция потерь для регрессии ориентированных ограничивающих рамок."""
     def __init__(self):
         super().__init__()
 
     def forward(self, pred_params: Tensor, target_params: Tensor) -> Tensor:
         """
         Аргументы:
-            pred_params: (..., 6) with [x, y, w, h, sin_theta, cos_theta]
-            target_params: (..., 6) with same format
+            pred_params: (..., 6) с [x, y, w, h, sin_theta, cos_theta]
+            target_params: (..., 6) с тем же форматом
         
         Возвращает:
-            loss: Scalar loss value
+            loss: Скалярное значение потери
         """
-        # L1 loss for center, width, height
+        # L1 потеря для центра, ширины и высоты
         l1_loss = F.l1_loss(pred_params[..., :4], target_params[..., :4])
         
-        # Angular loss (using sin/cos parameterization)
+        # Угловая потеря (с использованием параметризации sin/cos)
         angular_loss = F.l1_loss(pred_params[..., 4:], target_params[..., 4:])
         
         return l1_loss + angular_loss
@@ -1192,33 +1192,33 @@ class ASTLoss(nn.Module):
                 targets: Dict[str, Tensor]) -> Tensor:
         """
         Аргументы:
-            predictions: Model output dict
-            targets: Target dict with:
-                - cls_labels: Binary classification labels
-                - obb_params: Target OBB parameters
-                - type_labels: Fence type labels
-                - sun_azimuth, sun_elevation: Sun position metadata
+            predictions: Выходной словарь модели
+            targets: Целевой словарь с:
+                - cls_labels: Метки бинарной классификации
+                - obb_params: Целевые параметры OBB
+                - type_labels: Метки типов ограждений
+                - sun_azimuth, sun_elevation: Метаданные положения солнца
         
         Возвращает:
-            total_loss: Weighted sum of all losses
+            total_loss: Взвешенная сумма всех потерь
         """
-        # Classification loss
+        # Потеря классификации
         cls_loss = self.focal_loss(
             predictions['cls_logits'], targets['cls_labels']
         )
         
-        # OBB regression loss
+        # Потеря регрессии OBB
         obb_loss = self.obb_loss(
             predictions['obb_params'], targets['obb_params']
         )
         
-        # Type classification loss
+        # Потеря классификации типов
         type_loss = self.ce_loss(
             predictions['type_logits'].flatten(0, 1),
             targets['type_labels'].flatten(0, 1)
         )
         
-        # Sun position loss (auxiliary)
+        # Потеря положения солнца (вспомогательная)
         pred_sin_cos, pred_elevation = predictions['sun_pred']
         target_sin_az = torch.sin(targets['sun_azimuth'])
         target_cos_az = torch.cos(targets['sun_azimuth'])
@@ -1239,13 +1239,13 @@ class ASTLoss(nn.Module):
 
 
 # =============================================================================
-# Training Utilities
+# Утилиты для обучения
 # =============================================================================
 
 def create_optimizer(model: nn.Module, lr: float = 1e-4, weight_decay: float = 0.05) -> torch.optim.Optimizer:
-    """Create optimizer with separate learning rates for different components."""
+    """Создание оптимизатора с различными скоростями обучения для разных компонентов."""
     
-    # Separate parameters for backbone and rest
+    # Разделение параметров на backbone и остальные
     backbone_params = []
     other_params = []
     
@@ -1265,7 +1265,7 @@ def create_optimizer(model: nn.Module, lr: float = 1e-4, weight_decay: float = 0
 
 def create_scheduler(optimizer: torch.optim.Optimizer, num_epochs: int,
                      warmup_epochs: int = 5) -> torch.optim.lr_scheduler._LRScheduler:
-    """Create learning rate scheduler with warmup."""
+    """Создание планировщика скорости обучения с прогревом."""
     
     warmup_scheduler = torch.optim.lr_scheduler.LinearLR(
         optimizer, start_factor=0.1, end_factor=1.0, total_iters=warmup_epochs
@@ -1285,22 +1285,22 @@ def create_scheduler(optimizer: torch.optim.Optimizer, num_epochs: int,
 
 if __name__ == "__main__":
     # Быстрый тест
-    print("Testing AST Model...")
+    print("Тестирование модели AST...")
     
     # Создание модели
     model = ASTModel(img_size=512, num_queries=300)
     model.eval()
     
-    # Создание dummy input
+    # Создание фиктивного входа
     images = torch.randn(2, 3, 512, 512)
     sun_azimuth = torch.tensor([0.5, 1.0])
     sun_elevation = torch.tensor([0.3, 0.6])
     
-    # Forward pass
+    # Прямой проход
     with torch.no_grad():
         outputs = model(images, sun_azimuth, sun_elevation)
     
-    print(f"Classification logits shape: {outputs['cls_logits'].shape}")
-    print(f"OBB params shape: {outputs['obb_params'].shape}")
-    print(f"Type logits shape: {outputs['type_logits'].shape}")
-    print("Model test passed!")
+    print(f"Форма логитов классификации: {outputs['cls_logits'].shape}")
+    print(f"Форма параметров OBB: {outputs['obb_params'].shape}")
+    print(f"Форма логитов типов: {outputs['type_logits'].shape}")
+    print("Тест модели пройден!")

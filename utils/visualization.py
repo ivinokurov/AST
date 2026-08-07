@@ -158,11 +158,11 @@ def draw_detections(
         # Формирование метки
         label_text = ""
         if label == 1:
-            label_text = "Fence"
+            label_text = "fence"
             if show_types and len(fence_types) > i:
                 label_text += f" T{fence_types[i]}"
         elif label == 2:
-            label_text = "Shadow"
+            label_text = "shadow"
         
         if show_scores:
             label_text += f" {score:.2f}"

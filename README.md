@@ -19,12 +19,12 @@ ast_model/
 ├── README.md            # Документация
 ├── images/              # Изображения (pdf-файлы) 
 ├── utils/               # Утилиты
-│   ├── __init__.py
+│   ├── __init__.py      # Инициализация пакета utils
 │   ├── geometry.py      # Геометрические операции с OBB
 │   ├── metrics.py       # Метрики качества (mAP, связность)
 │   └── visualization.py # Визуализация результатов
-└── tests/
-    └── test_model.py   # Юнит-тесты
+└── tests/               # Юнит-тесты
+    └── test_model.py    # Тесты для модели AST
 ```
 
 ## Установка

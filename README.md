@@ -6,21 +6,22 @@
 
 ```
 ast_model/
-├── config.py           # Конфигурация модели и параметры обучения
-├── model.py            # Архитектура модели AST
-├── train.py            # Скрипт обучения модели
-├── inference.py        # Скрипт инференса и визуализации
-├── dataset.py          # Загрузчик данных и аугментации
-├── transforms.py       # Специализированные трансформации
-├── engine.py           # Движок обучения и валидации
-├── logger.py           # Логирование (TensorBoard, WandB)
-├── post_processing.py  # Пост-обработка (NMS, группировка теней)
-├── requirements.txt    # Зависимости Python
-├── README.md           # Документация
-├── utils/
+├── config.py            # Конфигурация модели и параметры обучения
+├── model.py             # Архитектура модели AST
+├── train.py             # Скрипт обучения модели
+├── inference.py         # Скрипт инференса и визуализации
+├── dataset.py           # Загрузчик данных и аугментации
+├── transforms.py        # Специализированные трансформации
+├── engine.py            # Движок обучения и валидации
+├── logger.py            # Логирование (TensorBoard, WandB)
+├── post_processing.py   # Пост-обработка (NMS, группировка теней)
+├── requirements.txt     # Зависимости Python
+├── README.md            # Документация
+├── images/              # Изображения (pdf-файлы) 
+├── utils/               # Утилиты
 │   ├── __init__.py
-│   ├── geometry.py     # Геометрические операции с OBB
-│   ├── metrics.py      # Метрики качества (mAP, связность)
+│   ├── geometry.py      # Геометрические операции с OBB
+│   ├── metrics.py       # Метрики качества (mAP, связность)
 │   └── visualization.py # Визуализация результатов
 └── tests/
     └── test_model.py   # Юнит-тесты

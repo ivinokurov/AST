@@ -17,11 +17,16 @@ ast_model/
 ├── dataset.py           # Загрузчик данных и аугментации
 ├── transforms.py        # Специализированные трансформации
 ├── engine.py            # Движок обучения и валидации
-├── logger.py            # Логирование (TensorBoard, WandB)
+├── logger.py            # Логирование (TensorBoard)
 ├── post_processing.py   # Пост-обработка (NMS, группировка теней)
 ├── requirements.txt     # Зависимости Python
 ├── README.md            # Документация
-├── images/              # Изображения (pdf-файлы) 
+├── images/              # Изображения с результатами работы модели
+│   ├── ast_forest.pdf   # Результаты AST для лесных участков
+│   ├── ast_garden.pdf   # Результаты AST для садовых участков
+│   ├── ast_redroof.pdf  # Результаты AST для зданий с красной крышей
+│   ├── ast_woodroof.pdf # Результаты AST для зданий с деревянной крышей
+│   └── fence_shadow.pdf # Геометрия пары «ограждение–тень»
 ├── utils/               # Утилиты
 │   ├── __init__.py      # Инициализация пакета utils
 │   ├── geometry.py      # Геометрические операции с OBB

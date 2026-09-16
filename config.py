@@ -11,7 +11,7 @@ from typing import List, Tuple, Optional
 
 @dataclass
 class BackboneConfig:
-    """Конфигурация экстрактора признаков (Swin Transformer с деформируемым вниманием)."""
+    """Конфигурация экстрактора признаков (Shadow Transformer с деформируемым вниманием)."""
     # Параметры стекового слоя (Patch Embedding)
     patch_embed_kernel: int = 4
     patch_embed_stride: int = 4

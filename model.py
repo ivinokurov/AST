@@ -1,5 +1,5 @@
 """
-AST (Adaptive Swin Transformer) - Модель для детекции ограждений и их теней
+AST (Adaptive Shadow Transformer) - Модель для детекции ограждений и их теней
 
 Этот модуль реализует архитектуру AST согласно спецификации:
 - Экстрактор признаков на базе Swin Transformer с деформируемым вниманием на этапах 2-4
@@ -69,7 +69,7 @@ class Mlp(nn.Module):
 # =============================================================================
 
 class WindowAttention(nn.Module):
-    """Оконное многоголовое самовнимание для Swin Transformer."""
+    """Оконное многоголовое самовнимание для Shadow Transformer."""
     def __init__(self, dim: int, num_heads: int, window_size: int = 7,
                  qkv_bias: bool = True, attn_drop: float = 0.0, proj_drop: float = 0.0):
         super().__init__()
@@ -341,11 +341,11 @@ class DeformableAttention(nn.Module):
 
 
 # =============================================================================
-# Блок Swin Transformer
+# Блок Shadow Transformer
 # =============================================================================
 
-class SwinTransformerBlock(nn.Module):
-    """Блок Swin Transformer с архитектурой pre-norm."""
+class ShadowTransformerBlock(nn.Module):
+    """Блок Shadow Transformer с архитектурой pre-norm."""
     def __init__(self, dim: int, num_heads: int, window_size: int = 7,
                  shift_size: int = 0, mlp_ratio: float = 4.0,
                  drop: float = 0.0, drop_path: float = 0.0,
@@ -532,7 +532,7 @@ class PatchMerging(nn.Module):
 # =============================================================================
 
 class ASTBackbone(nn.Module):
-    """Backbone AST: Swin Transformer с деформируемым вниманием на этапах 2-4.
+    """Backbone AST: Shadow Transformer с деформируемым вниманием на этапах 2-4.
     
     Формирует многоуровневые карты признаков и раздельные поля смещений для ограждений и теней.
     """
@@ -566,7 +566,7 @@ class ASTBackbone(nn.Module):
             
             for i_block in range(depths[i_stage]):
                 shift_size = window_size // 2 if i_block % 2 == 1 else 0
-                block = SwinTransformerBlock(
+                block = ShadowTransformerBlock(
                     dim=num_channels,
                     num_heads=num_heads[i_stage] if i_stage < len(num_heads) else num_heads[-1],
                     window_size=window_size,

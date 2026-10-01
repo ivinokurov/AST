@@ -1,7 +1,7 @@
 # AST (Adaptive Shadow Transformer) — совместная детекция ограждений и их теней на ортофотоснимках малоэтажной застройки
 
-![Структура проекта](https://img.shields.io/badge/release-v1.0.0-blue)
-![Лицензия](https://img.shields.io/badge/license-Apache--2.0-green)
+[![Release](https://img.shields.io/badge/release-v1.0.2-blue)](#установка)
+[![License](https://img.shields.io/badge/license-Apache--2.0-green)](#лицензия)
 
 Модель AST предназначена для совместной детекции ограждений и их теней на надирных аэрофотоснимках малоэтажной застройки с учётом положения солнца и типа ограждения.
 
